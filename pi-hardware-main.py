@@ -1,4 +1,3 @@
-
 """Example usage of the f126_telemetry package.
 
 Run this while F1 25 (2026 Season Pack) is sending UDP telemetry to this
@@ -18,33 +17,43 @@ This file also doubles as the reference for extending the receiver:
 from f126_telemetry import PacketID, TelemetryListener
 from f126_telemetry.packets.event import describe_event
 from gpiozero import LED
+from gpiozero import TonalBuzzer
+from gpiozero.tones import Tone
+from time import sleep
 import os
+import threading
+
+
 listener = TelemetryListener(port=20777)
+
 
 class AvailableHardware():
     def __init__(self):
         self.s_mode_available = LED(17)
+        self.buzzer = TonalBuzzer(18)
+        self._tone_lock = threading.Lock()
 
-from gpiozero import TonalBuzzer
-from gpiozero.tones import Tone
-from time import sleep
+    def _play_tone(self, note="C5", duration=0.15):
+        try:
+            self.buzzer.play(Tone(note))
+            sleep(duration)
+            self.buzzer.stop()
+        finally:
+            self._tone_lock.release()
 
-buzzer = TonalBuzzer(18)
+    def play_s_mode_tone(self):
+        # Non-blocking: runs the tone on a background thread so the UDP
+        # receive loop never waits on it. Skips if a tone is already playing.
+        if self._tone_lock.acquire(blocking=False):
+            threading.Thread(target=self._play_tone, daemon=True).start()
 
-# Bb major scale (one octave, starting at Bb4)
-notes = ["A#4", "C5", "D5", "D#5", "F5", "G5", "A5"]
 
-for note in notes:
-    buzzer.play(Tone(note))
-    print(f"Playing {note}")
-    sleep(0.5)
-
-buzzer.stop()
 
 hardware = AvailableHardware()
+_prev_s_mode_available = 0
 
 
-#shift=0b10000 00000 00000
+# shift=0b10000 00000 00000
 # @listener.on(PacketID.CAR_TELEMETRY)
 # def on_car_telemetry(packet, addr):
 #     car = packet.m_carTelemetryData[packet.m_header.m_playerCarIndex]
@@ -59,15 +68,19 @@ hardware = AvailableHardware()
 
 @listener.on(PacketID.CAR_TELEMETRY_2)
 def on_car_telemetry2(packet, addr):
+    global _prev_s_mode_available
     car = packet.m_carTelemetry2Data[packet.m_header.m_playerCarIndex]
-    #os.system('cls' if os.name == 'nt' else 'clear')
+    # os.system('cls' if os.name == 'nt' else 'clear')
     print(
         f"S Mode Available: {car.m_activeAeroAvailable}     S Mode Active: {car.m_activeAeroMode}"
     )
     if car.m_activeAeroAvailable == 1:
         hardware.s_mode_available.on()
+        if _prev_s_mode_available == 0:
+            hardware.play_s_mode_tone()
     else:
         hardware.s_mode_available.off()
+    _prev_s_mode_available = car.m_activeAeroAvailable
 
 
 # @listener.on(PacketID.LAP_DATA)
