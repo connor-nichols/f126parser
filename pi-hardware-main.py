@@ -50,7 +50,7 @@ def on_car_telemetry2(packet, addr):
     print(
         f"S Mode Available: {car.m_activeAeroAvailable}     S Mode Active: {car.m_activeAeroMode}"
     )
-    if car.m_activeAeroAvailable == "1":
+    if car.m_activeAeroAvailable == 1:
         hardware.s_mode_available.on()
     else:
         hardware.s_mode_available.off()
