@@ -19,33 +19,29 @@ from f126_telemetry import PacketID, TelemetryListener
 from f126_telemetry.packets.event import describe_event
 from gpiozero import LED
 import os
-
-
 listener = TelemetryListener(port=20777)
 
-from time import sleep
+class AvailableHardware():
+    def __init__(self):
+        self.s_mode_available = LED(17)
 
-led = LED(17)
 
-while True:
-    led.on()
-    sleep(1)
-    led.off()
-    sleep(1)
 
-"""
+hardware = AvailableHardware()
+
+
 #shift=0b10000 00000 00000
-@listener.on(PacketID.CAR_TELEMETRY)
-def on_car_telemetry(packet, addr):
-    car = packet.m_carTelemetryData[packet.m_header.m_playerCarIndex]
-    os.system('cls' if os.name == 'nt' else 'clear')
-    formatted_shift = str(bin(car.m_revLightsBitValue))[2:]
-    formatted_shift = formatted_shift[::-1]
-    formatted_shift = formatted_shift.replace("0", " ").replace("1", "*")
-    print(
-        f"[Telemetry] speed={car.m_speed:>3} km/h  gear={car.m_gear:>2}  "
-        f"rpm={car.m_engineRPM:>5}  throttle={car.m_throttle:.2f}  brake={car.m_brake:.2f}  shift={formatted_shift}"
-    )
+# @listener.on(PacketID.CAR_TELEMETRY)
+# def on_car_telemetry(packet, addr):
+#     car = packet.m_carTelemetryData[packet.m_header.m_playerCarIndex]
+#     os.system('cls' if os.name == 'nt' else 'clear')
+#     formatted_shift = str(bin(car.m_revLightsBitValue))[2:]
+#     formatted_shift = formatted_shift[::-1]
+#     formatted_shift = formatted_shift.replace("0", " ").replace("1", "*")
+#     print(
+#         f"[Telemetry] speed={car.m_speed:>3} km/h  gear={car.m_gear:>2}  "
+#         f"rpm={car.m_engineRPM:>5}  throttle={car.m_throttle:.2f}  brake={car.m_brake:.2f}  shift={formatted_shift}"
+#     )
 
 @listener.on(PacketID.CAR_TELEMETRY_2)
 def on_car_telemetry2(packet, addr):
@@ -54,20 +50,24 @@ def on_car_telemetry2(packet, addr):
     print(
         f"S Mode Available: {car.m_activeAeroAvailable}     S Mode Active: {car.m_activeAeroMode}"
     )
+    if car.m_activeAeroAvailable = "1":
+        hardware.s_mode_available.on()
+    else:
+        hardware.s_mode_available.off()
 
-@listener.on(PacketID.LAP_DATA)
-def on_lap_data(packet, addr):
-    lap = packet.m_lapData[packet.m_header.m_playerCarIndex]
-    #print(f"[Lap] lap={lap.m_currentLapNum}  position={lap.m_carPosition}")
 
-
-@listener.on(PacketID.EVENT)
-def on_event(packet, addr):
-    event = describe_event(packet)
-    if event:
-        print(f"[Event] {event['label']}: {event['details']}")
+# @listener.on(PacketID.LAP_DATA)
+# def on_lap_data(packet, addr):
+#     lap = packet.m_lapData[packet.m_header.m_playerCarIndex]
+#     #print(f"[Lap] lap={lap.m_currentLapNum}  position={lap.m_carPosition}")
+#
+#
+# @listener.on(PacketID.EVENT)
+# def on_event(packet, addr):
+#     event = describe_event(packet)
+#     if event:
+#         print(f"[Event] {event['label']}: {event['details']}")
 
 
 if __name__ == "__main__":
     listener.run()
-"""
