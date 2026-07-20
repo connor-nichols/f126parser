@@ -25,7 +25,15 @@ class AvailableHardware():
     def __init__(self):
         self.s_mode_available = LED(17)
 
+from gpiozero import TonalBuzzer
+from gpiozero.tones import Tone
+from time import sleep
 
+buzzer = TonalBuzzer(18)
+
+buzzer.play(Tone("A4"))
+sleep(1)
+buzzer.stop()
 
 hardware = AvailableHardware()
 
