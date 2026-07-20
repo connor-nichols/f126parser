@@ -31,8 +31,14 @@ from time import sleep
 
 buzzer = TonalBuzzer(18)
 
-buzzer.play(Tone("A4"))
-sleep(1)
+# Bb major scale (one octave, starting at Bb4)
+notes = ["A#4", "C5", "D5", "D#5", "F5", "G5", "A5", "A#5"]
+
+for note in notes:
+    buzzer.play(Tone(note))
+    print(f"Playing {note}")
+    sleep(0.5)
+
 buzzer.stop()
 
 hardware = AvailableHardware()
