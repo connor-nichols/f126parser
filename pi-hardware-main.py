@@ -26,26 +26,44 @@ import threading
 
 listener = TelemetryListener(port=20777)
 
+DEFAULT_NOTE_DURATION = 0.15
+
+# Named tone sequences for different telemetry events. Each entry is a list of
+# notes played in order; a note is either "C5" (plays for DEFAULT_NOTE_DURATION)
+# or ("C5", 0.3) to give it its own duration. Add a new key here, then trigger
+# it from any handler with hardware.play("your_key").
+TONES = {
+    "s_mode_available": ["C5"],
+    "s_mode_active": ["G5"],
+}
+
 
 class AvailableHardware():
-    def __init__(self):
+    def __init__(self, tones=TONES):
         self.s_mode_available = LED(17)
         self.buzzer = TonalBuzzer(18)
+        self.tones = tones
         self._tone_lock = threading.Lock()
 
-    def _play_tone(self, note="C5", duration=0.15):
+    def _play_sequence(self, notes):
         try:
-            self.buzzer.play(Tone(note))
-            sleep(duration)
+            for note in notes:
+                name, duration = note if isinstance(note, tuple) else (note, DEFAULT_NOTE_DURATION)
+                self.buzzer.play(Tone(name))
+                sleep(duration)
             self.buzzer.stop()
         finally:
             self._tone_lock.release()
 
-    def play_s_mode_tone(self):
-        # Non-blocking: runs the tone on a background thread so the UDP
-        # receive loop never waits on it. Skips if a tone is already playing.
+    def play(self, event):
+        # Non-blocking: runs the tone sequence on a background thread so the
+        # UDP receive loop never waits on it. No-ops if `event` isn't in
+        # self.tones, or if a tone is already playing.
+        notes = self.tones.get(event)
+        if not notes:
+            return
         if self._tone_lock.acquire(blocking=False):
-            threading.Thread(target=self._play_tone, daemon=True).start()
+            threading.Thread(target=self._play_sequence, args=(notes,), daemon=True).start()
 
 
 
@@ -77,9 +95,12 @@ def on_car_telemetry2(packet, addr):
     if car.m_activeAeroAvailable == 1:
         hardware.s_mode_available.on()
         if _prev_s_mode_available == 0:
-            hardware.play_s_mode_tone()
+            hardware.play("s_mode_available")
     else:
         hardware.s_mode_available.off()
+
+    if car.m_activeAeroMode == 1:
+        hardware.play("s_mode_available")
     _prev_s_mode_available = car.m_activeAeroAvailable
 
 
