@@ -100,7 +100,8 @@ def on_car_telemetry2(packet, addr):
         hardware.s_mode_available.off()
 
     if car.m_activeAeroMode == 1:
-        hardware.play("s_mode_available")
+        if _prev_s_mode_available == 1:
+            hardware.play("s_mode_available")
     _prev_s_mode_available = car.m_activeAeroAvailable
 
 
