@@ -68,6 +68,7 @@ def wheel(pos):
     return (r, g, b) if ORDER in {neopixel.RGB, neopixel.GRB} else (r, g, b, 0)
 
 pixels[0] = (0, 255, 0, 0)
+pixels.show()
 
 listener = TelemetryListener(port=20777)
 
