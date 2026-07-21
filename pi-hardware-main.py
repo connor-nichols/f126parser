@@ -39,7 +39,7 @@ num_pixels = 16
 
 # The order of the pixel colors - RGB or GRB. Some NeoPixels have red and green reversed!
 # For RGBW NeoPixels, simply change the ORDER to RGBW or GRBW.
-ORDER = neopixel.RGBW
+ORDER = neopixel.GRBW
 
 pixels = neopixel.NeoPixel(
     pixel_pin, num_pixels, brightness=0.2, auto_write=False, pixel_order=ORDER
@@ -67,7 +67,9 @@ def wheel(pos):
         b = int(255 - pos * 3)
     return (r, g, b) if ORDER in {neopixel.RGB, neopixel.GRB} else (r, g, b, 0)
 
-pixels[0] = (0, 255, 0, 0)
+pixels[0:4] = (0, 255, 0, 0)
+pixels[5:9] = (255, 0, 0, 0)
+pixels[10:14] = (0, 0, 255, 0)
 pixels.show()
 
 listener = TelemetryListener(port=20777)
