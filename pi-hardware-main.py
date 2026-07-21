@@ -23,6 +23,10 @@ from time import sleep
 import os
 import threading
 
+import board
+import neopixel
+pixels = neopixel.NeoPixel(board.D21, 16)
+
 
 listener = TelemetryListener(port=20777)
 
