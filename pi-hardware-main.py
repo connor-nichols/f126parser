@@ -22,18 +22,12 @@ from gpiozero.tones import Tone
 from time import sleep
 import os
 import threading
-
-# Simple test for NeoPixels on Raspberry Pi
-import time
-
 import board
-
 import neopixel
 
 # Choose an open pin connected to the Data In of the NeoPixel strip, i.e. board.D18
 # NeoPixels must be connected to D10, D12, D18 or D21 to work.
 pixel_pin = board.D21
-
 # The number of NeoPixels
 num_pixels = 16
 
@@ -45,47 +39,14 @@ pixels = neopixel.NeoPixel(
     pixel_pin, num_pixels, brightness=0.1, auto_write=False, pixel_order=ORDER
 )
 
-
-def wheel(pos):
-    # Input a value 0 to 255 to get a color value.
-    # The colours are a transition r - g - b - back to r.
-    if pos < 0 or pos > 255:
-        r = g = b = 0
-    elif pos < 85:
-        r = int(pos * 3)
-        g = int(255 - pos * 3)
-        b = 0
-    elif pos < 170:
-        pos -= 85
-        r = int(255 - pos * 3)
-        g = 0
-        b = int(pos * 3)
-    else:
-        pos -= 170
-        r = 0
-        g = int(pos * 3)
-        b = int(255 - pos * 3)
-    return (r, g, b) if ORDER in {neopixel.RGB, neopixel.GRB} else (r, g, b, 0)
-
-pixels[0] = (0, 255, 0, 0)
-pixels[1] = (0, 255, 0, 0)
-pixels[2] = (0, 255, 0, 0)
-pixels[3] = (0, 255, 0, 0)
-pixels[4] = (0, 255, 0, 0)
-
-pixels[5] = (255, 0, 0, 0)
-pixels[6] = (255, 0, 0, 0)
-pixels[7] = (255, 0, 0, 0)
-pixels[8] = (255, 0, 0, 0)
-pixels[9] = (255, 0, 0, 0)
-
-pixels[10] = (0, 0, 255, 0)
-pixels[11] = (0, 0, 255, 0)
-pixels[12] = (0, 0, 255, 0)
-pixels[13] = (0, 0, 255, 0)
-pixels[14] = (0, 0, 255, 0)
-
-pixels.show()
+# Shift light color per LED position, indexed to match m_revLightsBitValue's
+# bit layout (bit 0 = leftmost LED ... bit 14 = rightmost LED): green for the
+# first 5, red for the middle 5, blue for the last 5. Pixel 15 is unused.
+SHIFT_LIGHT_COLORS = (
+    [(0, 255, 0, 0)] * 5   # LEDs 0-4: green
+    + [(255, 0, 0, 0)] * 5  # LEDs 5-9: red
+    + [(0, 0, 255, 0)] * 5  # LEDs 10-14: blue
+)
 
 listener = TelemetryListener(port=20777)
 
@@ -102,11 +63,12 @@ TONES = {
 
 
 class AvailableHardware():
-    def __init__(self, tones=TONES):
+    def __init__(self, tones=TONES, pixels=pixels):
         self.s_mode_available = LED(17)
         self.buzzer = TonalBuzzer(18)
         self.tones = tones
         self._tone_lock = threading.Lock()
+        self.pixels = pixels
 
     def _play_sequence(self, notes):
         try:
@@ -128,24 +90,32 @@ class AvailableHardware():
         if self._tone_lock.acquire(blocking=False):
             threading.Thread(target=self._play_sequence, args=(notes,), daemon=True).start()
 
+    def set_shift_lights(self, bit_value):
+        # bit_value is m_revLightsBitValue: bit 0 = leftmost LED, bit 14 = rightmost LED.
+        for i, color in enumerate(SHIFT_LIGHT_COLORS):
+            self.pixels[i] = color if bit_value & (1 << i) else (0, 0, 0, 0)
+        self.pixels.show()
+
 
 
 hardware = AvailableHardware()
+hardware.set_shift_lights(0)
 _prev_s_mode_available = 0
 
 
 # shift=0b10000 00000 00000
-# @listener.on(PacketID.CAR_TELEMETRY)
-# def on_car_telemetry(packet, addr):
-#     car = packet.m_carTelemetryData[packet.m_header.m_playerCarIndex]
-#     os.system('cls' if os.name == 'nt' else 'clear')
-#     formatted_shift = str(bin(car.m_revLightsBitValue))[2:]
-#     formatted_shift = formatted_shift[::-1]
-#     formatted_shift = formatted_shift.replace("0", " ").replace("1", "*")
-#     print(
-#         f"[Telemetry] speed={car.m_speed:>3} km/h  gear={car.m_gear:>2}  "
-#         f"rpm={car.m_engineRPM:>5}  throttle={car.m_throttle:.2f}  brake={car.m_brake:.2f}  shift={formatted_shift}"
-#     )
+@listener.on(PacketID.CAR_TELEMETRY)
+def on_car_telemetry(packet, addr):
+    car = packet.m_carTelemetryData[packet.m_header.m_playerCarIndex]
+    hardware.set_shift_lights(car.m_revLightsBitValue)
+    os.system('cls' if os.name == 'nt' else 'clear')
+    formatted_shift = str(bin(car.m_revLightsBitValue))[2:]
+    formatted_shift = formatted_shift[::-1]
+    formatted_shift = formatted_shift.replace("0", " ").replace("1", "*")
+    print(
+        f"[Telemetry] speed={car.m_speed:>3} km/h  gear={car.m_gear:>2}  "
+        f"rpm={car.m_engineRPM:>5}  throttle={car.m_throttle:.2f}  brake={car.m_brake:.2f}  shift={formatted_shift}"
+    )
 
 @listener.on(PacketID.CAR_TELEMETRY_2)
 def on_car_telemetry2(packet, addr):
@@ -164,7 +134,7 @@ def on_car_telemetry2(packet, addr):
 
     if car.m_activeAeroMode == 1:
         if _prev_s_mode_available == 1:
-            hardware.play("s_mode_available")
+            hardware.play("s_mode_active")
     _prev_s_mode_available = car.m_activeAeroAvailable
 
 
