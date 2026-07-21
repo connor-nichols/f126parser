@@ -43,9 +43,9 @@ pixels = neopixel.NeoPixel(
 # bit layout (bit 0 = leftmost LED ... bit 14 = rightmost LED): green for the
 # first 5, red for the middle 5, blue for the last 5. Pixel 15 is unused.
 SHIFT_LIGHT_COLORS = (
-    [(0, 20, 0, 0)] * 5   # LEDs 0-4: green
-    + [(20, 0, 0, 0)] * 5  # LEDs 5-9: red
-    + [(0, 0, 20, 0)] * 5  # LEDs 10-14: blue
+    [(0, 255, 0, 0)] * 5   # LEDs 0-4: green
+    + [(255, 0, 0, 0)] * 5  # LEDs 5-9: red
+    + [(0, 0, 255, 0)] * 5  # LEDs 10-14: blue
 )
 
 listener = TelemetryListener(port=20777)
