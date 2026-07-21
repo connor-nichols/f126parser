@@ -72,8 +72,19 @@ pixels[1] = (0, 255, 0, 0)
 pixels[2] = (0, 255, 0, 0)
 pixels[3] = (0, 255, 0, 0)
 pixels[4] = (0, 255, 0, 0)
+
 pixels[5] = (255, 0, 0, 0)
+pixels[6] = (255, 0, 0, 0)
+pixels[7] = (255, 0, 0, 0)
+pixels[8] = (255, 0, 0, 0)
+pixels[9] = (255, 0, 0, 0)
+
 pixels[10] = (0, 0, 255, 0)
+pixels[11] = (0, 0, 255, 0)
+pixels[12] = (0, 0, 255, 0)
+pixels[13] = (0, 0, 255, 0)
+pixels[14] = (0, 0, 255, 0)
+
 pixels.show()
 
 listener = TelemetryListener(port=20777)
