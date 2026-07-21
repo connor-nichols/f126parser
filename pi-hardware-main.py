@@ -36,16 +36,16 @@ num_pixels = 16
 ORDER = neopixel.GRBW
 
 pixels = neopixel.NeoPixel(
-    pixel_pin, num_pixels, brightness=0.1, auto_write=False, pixel_order=ORDER
+    pixel_pin, num_pixels, brightness=0.2, auto_write=False, pixel_order=ORDER
 )
 
 # Shift light color per LED position, indexed to match m_revLightsBitValue's
 # bit layout (bit 0 = leftmost LED ... bit 14 = rightmost LED): green for the
 # first 5, red for the middle 5, blue for the last 5. Pixel 15 is unused.
 SHIFT_LIGHT_COLORS = (
-    [(0, 255, 0, 0)] * 5   # LEDs 0-4: green
-    + [(255, 0, 0, 0)] * 5  # LEDs 5-9: red
-    + [(0, 0, 255, 0)] * 5  # LEDs 10-14: blue
+    [(0, 127, 0, 0)] * 5   # LEDs 0-4: green
+    + [(127, 0, 0, 0)] * 5  # LEDs 5-9: red
+    + [(0, 0, 127, 0)] * 5  # LEDs 10-14: blue
 )
 
 listener = TelemetryListener(port=20777)
